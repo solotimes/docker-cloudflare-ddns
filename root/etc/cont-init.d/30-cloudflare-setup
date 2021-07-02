@@ -2,6 +2,9 @@
 
 . /app/cloudflare.sh
 
+HOSTNAME=$(curl -s --header 'Accept: application/json' http://rancher-metadata/2015-07-25/self/host | jq -r '.name')
+SUBDOMAIN=${SUBDOMAIN:-"$HOSTNAME"}
+
 # Verify the $EMAIL and $API_KEY env variables are valid
 statusCode=$(verifyToken)
 
