@@ -4,6 +4,7 @@
 
 HOSTNAME=$(curl -s --header 'Accept: application/json' http://rancher-metadata/2015-07-25/self/host | jq -r '.name')
 SUBDOMAIN=${SUBDOMAIN:-"$HOSTNAME"}
+RAW_SUBDOMAIN="$SUBDOMAIN-raw"
 
 # Verify the $EMAIL and $API_KEY env variables are valid
 statusCode=$(verifyToken)
@@ -92,3 +93,19 @@ fi
 echo "DNS Record: $CFDnsRecordName ($CFDnsRecordId)"
 echo "CF_ZONE_ID=\"$CFZoneId\" CF_RECORD_ID=\"$CFDnsRecordId\" CF_RECORD_NAME=\"$CFDnsRecordName\"" > /config/cloudflare.conf
 echo "$CRON	/etc/cont-init.d/50-ddns" > /var/spool/cron/crontabs/root
+
+# Get the ID of the dns record from the CloudFlare API
+CFDnsRecordId=$(getDnsRecordId $CFZoneId $RAW_SUBDOMAIN)
+
+# If the dns record does not exist, create it now.
+if [ "$CFDnsRecordId" == "null" ]; then
+  echo "DNS record for '$CFDnsRecordName' was not found in $ZONE zone. Creating now..."
+  CFDnsRecordId=$(createDnsRecord $CFZoneId $CFDnsRecordName $PublicIpAddress)
+
+  if [ "$CFDnsRecordId" == "null" ]; then
+    echo "----------------------------------------------------------------"
+    echo "ERROR: Failed to create DNS record '$CFDnsRecordName'"
+    echo "----------------------------------------------------------------"
+    exit 1
+  fi
+fi
