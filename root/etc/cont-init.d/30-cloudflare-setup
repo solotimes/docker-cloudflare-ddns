@@ -91,12 +91,12 @@ if [ "$CFDnsRecordId" == "null" ]; then
 fi
 
 echo "DNS Record: $CFDnsRecordName ($CFDnsRecordId)"
-echo "CF_ZONE_ID=\"$CFZoneId\" CF_RECORD_ID=\"$CFDnsRecordId\" CF_RECORD_NAME=\"$CFDnsRecordName\"" > /config/cloudflare.conf
+echo "CF_ZONE_ID=\"$CFZoneId\" CF_RECORD_ID=\"$CFDnsRecordId\" CF_RECORD_NAME=\"$CFDnsRecordName\" PROXIED=\"$PROXIED\"" > /config/cloudflare.conf
 echo "$CRON	/etc/cont-init.d/50-ddns" > /var/spool/cron/crontabs/root
 
 # Get the ID of the dns record from the CloudFlare API
 CFDnsRecordId=$(getDnsRecordId $CFZoneId $RAW_SUBDOMAIN)
-
+PROXIED=false
 # If the dns record does not exist, create it now.
 if [ "$CFDnsRecordId" == "null" ]; then
   echo "DNS record for '$CFDnsRecordName' was not found in $ZONE zone. Creating now..."
